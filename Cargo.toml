@@ -6,6 +6,17 @@ authors = ["elichai2 <elichai.turkel@gmail.com>"]
 repository = "https://github.com/elichai/stdio-override"
 readme = "README.md"
 edition = "2018"
+description = "Rust library for overriding Stdin/Stdout/Stderr with a different File Descriptor"
+categories = ["os::unix-apis", "development-tools::debugging"]
+keywords = ["unix", "sockets", "fd", "file", "io"]
+
 
 [dependencies]
 libc = "0.2"
+doc-comment = { version = "0.3", optional = true }
+
+[features]
+test-readme =  ["doc-comment"]
+
+[badges]
+travis-ci = { repository = "elichai/log-derive" }

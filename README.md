@@ -31,18 +31,47 @@ use stdio_override::*;
 Here's an example on how to write stdout into a file:
 
 ```rust
-    use stdio_override::StdoutOverride;
     use std::{fs::read_to_string, mem};
+    use stdio_override::StdoutOverride;
     
     fn main() {
         let file_name = "./test.txt";
-        
+    
         let guard = StdoutOverride::override_file(file_name).unwrap();
         println!("12345");
         mem::drop(guard);
     
         let contents = read_to_string(file_name).unwrap();
         assert_eq!("12345\n", contents);
-        println!("Outside!");    
+        println!("Outside!");
+    }
+```
+
+You can do the same with sockets:
+```rust
+    use std::{
+        io::Read,
+        mem,
+        net::{TcpListener, TcpStream},
+    };
+    use stdio_override::StdoutOverride;
+    
+    fn main() {
+        let address = ("127.0.0.1", 5543);
+    
+        let listener = TcpListener::bind(address).unwrap();
+        let socket = TcpStream::connect(address).unwrap();
+    
+        let guard = StdoutOverride::override_raw(socket).unwrap();
+        println!("12345");
+        mem::drop(guard);
+    
+        let mut contents = String::new();
+        let (mut stream, _) = listener.accept().unwrap();
+        stream.read_to_string(&mut contents).unwrap();
+    
+        assert_eq!("12345\n", contents);
+    
+        println!("Outside!");
     }
 ```

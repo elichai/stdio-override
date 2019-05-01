@@ -77,10 +77,15 @@ impl Drop for StdoutOverrideGuard {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::{fs::{File, remove_file}, io::{Read, Write, stdout}, mem};
+    use std::{
+        fs::{read_to_string, remove_file, File},
+        io::{stdout, Read, Write},
+        mem,
+    };
+
     #[test]
     fn test_stdout() {
-        let file_name = "./test.txt";
+        let file_name = "./test1.txt";
         let data = "12345";
         let _ = remove_file(file_name);
 
@@ -89,13 +94,35 @@ mod test {
         stdout().flush().unwrap();
         mem::drop(guard);
 
-        let mut file = File::open("test.txt").unwrap();
-
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).unwrap();
+        let contents = read_to_string(file_name).unwrap();
         assert_eq!(data, contents);
         println!("Outside!");
 
+        remove_file(file_name).unwrap();
+    }
+
+    #[test]
+    fn test_original() {
+        let file_name = "./test2.txt";
+        let _ = remove_file(file_name);
+
+        let file = File::create(file_name).unwrap();
+        let file = file.into_raw_fd();
+
+        let real_stdout = unsafe { dup(STDOUT_FILENO) }.unwrap();
+
+        unsafe { dup2(file, STDOUT_FILENO) }.unwrap();
+
+        println!("Let's see where it's saved");
+        let mut file = File::open(file_name).unwrap();
+
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+        stdout().lock().flush().unwrap();
+        unsafe { dup2(real_stdout, STDOUT_FILENO) }.unwrap();
+        assert_eq!("Let\'s see where it\'s saved\n", contents);
+
+        println!("got back");
         remove_file(file_name).unwrap();
     }
 }

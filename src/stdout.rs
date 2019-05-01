@@ -12,14 +12,23 @@ static IS_REPLACED: AtomicBool = AtomicBool::new(false);
 
 const ORDERING: Ordering = Ordering::SeqCst;
 
+/// A Guard over the Stdout change.
+/// when this guard is dropped stdout will go back to the original,
+/// and the file will be closed.
 pub struct StdoutOverrideGuard {
     stdout_fd: RawFd,
     file_fd: RawFd,
 }
 
+/// Override the Stdout File Descriptor safely.
+///
 pub struct StdoutOverride;
 
 impl StdoutOverride {
+    /// Override the stdout by providing a path.
+    /// This uses [`File::create`] so it will fail/succeed accordingly.
+    ///
+    /// [`File::create`]: https://doc.rust-lang.org/stable/std/fs/struct.File.html#method.create
     pub fn override_file<P: AsRef<Path>>(p: P) -> io::Result<StdoutOverrideGuard> {
         Self::check_override();
 
@@ -28,6 +37,10 @@ impl StdoutOverride {
         Self::override_fd(file_fd)
     }
 
+    /// Override the stdout by providing something that can be turned into a file descriptor.
+    /// This will accept Sockets, Files, and even Stdio's. [`AsRawFd`]
+    ///
+    /// [`AsRawFd`]: https://doc.rust-lang.org/stable/std/os/unix/io/trait.AsRawFd.html
     pub fn override_raw<FD: AsRawFd>(fd: FD) -> io::Result<StdoutOverrideGuard> {
         Self::check_override();
 
@@ -53,8 +66,11 @@ impl StdoutOverride {
 
 impl Drop for StdoutOverrideGuard {
     fn drop(&mut self) {
+        // Ignoring syscalls errors seems to be the most sensible thing to do in a Drop impl
+        // https://github.com/rust-lang/rust/blob/bd177f3e/src/libstd/sys/unix/fd.rs#L293-L302
         let _ = unsafe { dup2(self.stdout_fd, STDOUT_FILENO) };
         let _ = unsafe { close(self.file_fd) };
+        IS_REPLACED.store(false, ORDERING);
     }
 }
 

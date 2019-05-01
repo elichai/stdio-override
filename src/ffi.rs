@@ -3,7 +3,7 @@ pub use libc::{STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
 use std::io::{Error, Result};
 
 pub unsafe fn dup(fd: c_int) -> Result<c_int> {
-    let res = libc::dup(fd) ;
+    let res = libc::dup(fd);
     if res == -1 {
         Err(Error::last_os_error())
     } else {

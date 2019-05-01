@@ -31,7 +31,7 @@
 mod ffi;
 mod stdout;
 
-pub use stdout::{StdoutOverride, StdoutOverrideGuard};
+pub use crate::stdout::{StdoutOverride, StdoutOverrideGuard};
 
 #[cfg(feature = "test-readme")]
 doc_comment::doctest!("../README.md");

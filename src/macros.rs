@@ -34,9 +34,10 @@ macro_rules! fd_guard {
 
             impl $name {
                 /// Override the File Descriptor by providing a path.
-                /// This uses [`File::create`] so it will fail/succeed accordingly.
+                /// This uses [`OpenOptions`] with `create(true)` so it will fail/succeed accordingly.
+                /// (won't fail if the fail already exists and will create it if it doesn't exist.)
                 ///
-                /// [`File::create`]: https://doc.rust-lang.org/stable/std/fs/struct.File.html#method.create
+                /// [`File::create`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
                 pub fn override_file<P: AsRef<Path>>(p: P) -> io::Result<$guard_name> {
                     Self::check_and_override();
 

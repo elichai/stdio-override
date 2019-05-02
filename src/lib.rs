@@ -29,7 +29,15 @@
 //! ```
 //!
 mod ffi;
-mod stdout;
+#[macro_use]
+mod macros;
+
+fd_guard!(StdoutOverride, guard: StdoutOverrideGuard, FD: crate::ffi::STDOUT_FILENO, name of FD: stdout);
+fd_guard!(StdinOverride, guard: StdinOverrideGuard, FD: crate::ffi::STDIN_FILENO, name of FD: stdin);
+fd_guard!(StderrOverride, guard: StderrOverrideGuard, FD: crate::ffi::STDERR_FILENO, name of FD: stderr);
+
+pub use crate::stderr::{StderrOverride, StderrOverrideGuard};
+
 
 pub use crate::stdout::{StdoutOverride, StdoutOverrideGuard};
 

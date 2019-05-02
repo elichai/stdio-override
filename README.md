@@ -31,7 +31,7 @@ use stdio_override::*;
 Here's an example on how to write stdout into a file:
 
 ```rust
-use std::{fs::read_to_string, mem, io};
+use std::{fs::read_to_string, io};
 use stdio_override::StdoutOverride;
 
 fn main() -> io::Result<()> {
@@ -39,7 +39,7 @@ fn main() -> io::Result<()> {
 
     let guard = StdoutOverride::override_file(file_name)?;
     println!("12345");
-    mem::drop(guard);
+    drop(guard);
 
     let contents = read_to_string(file_name)?;
     assert_eq!("12345\n", contents);
@@ -52,7 +52,6 @@ You can do the same with sockets:
 ```rust
 use std::{
     io::Read,
-    mem,
     net::{TcpListener, TcpStream},
 };
 use stdio_override::StdoutOverride;
@@ -65,7 +64,7 @@ fn main() {
 
     let guard = StdoutOverride::override_raw(socket).unwrap();
     println!("12345");
-    mem::drop(guard);
+    drop(guard);
 
     let mut contents = String::new();
     let (mut stream, _) = listener.accept().unwrap();
@@ -80,7 +79,7 @@ fn main() {
 Both will work the same for `Stderr` and if you want to input `Stdin` from a file/socket you can do the following:
 
 ```rust
-use std::{fs::{File, read_to_string}, mem, io::{self, Write}};
+use std::{fs::{File, read_to_string}, io::{self, Write}};
 use stdio_override::StdinOverride;
 
 fn main() -> io::Result<()> {
@@ -96,7 +95,7 @@ fn main() -> io::Result<()> {
     let mut inputs = String::new();
     io::stdin().read_line(&mut inputs)?;
     
-    mem::drop(guard);
+    drop(guard);
 
     assert_eq!("Data", inputs);
     // Stdin is working as usual again, because the guard is dropped.

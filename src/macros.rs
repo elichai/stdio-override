@@ -15,7 +15,7 @@ macro_rules! fd_guard {
             const ORDERING: Ordering = Ordering::SeqCst;
 
             /// A Guard over the File Descriptor change.
-            /// when this guard is dropped $doc will go back to the original,
+            /// when this guard is dropped the File Descriptor will go back to the original,
             /// and the file will be closed.
             ///
             /// For more information please see the [module-level documentation]

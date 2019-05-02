@@ -18,7 +18,7 @@
 //! ```rust
 //!# fn main() -> std::io:: Result<()> {
 //! use stdio_override::StdoutOverride;
-//! use std::{fs, mem};
+//! use std::fs;
 //! let file_name = "./test.txt";
 //!# std::fs::remove_file(file_name);
 //! let guard = StdoutOverride::override_file(file_name)?;
@@ -26,7 +26,7 @@
 //!
 //! let contents = fs::read_to_string(file_name)?;
 //! assert_eq!("Isan to Stdout!\n", contents);
-//! mem::drop(guard);
+//! drop(guard);
 //! println!("Outside!");
 //!
 //!# Ok(())
@@ -37,7 +37,7 @@
 //! ```rust
 //! # fn main() -> std::io:: Result<()> {
 //! use stdio_override::StderrOverride;
-//! use std::{fs, mem};
+//! use std::fs;
 //! let file_name = "./testerr.txt";
 //! # std::fs::remove_file(file_name);
 //! let guard = StderrOverride::override_file(file_name)?;
@@ -45,7 +45,7 @@
 //!
 //! let contents = fs::read_to_string(file_name)?;
 //! assert_eq!("Failure to stderr\n", contents);
-//! mem::drop(guard);
+//! drop(guard);
 //! eprintln!("Stderr is back!");
 //!
 //! # Ok(())
@@ -56,7 +56,6 @@
 //! ```rust
 //! # fn main() -> std::io:: Result<()> {
 //! # use std::{fs::{self, File},io::{self, Write}};
-//! use std::mem;
 //! use stdio_override::StdinOverride;
 //! let file_name = "./inputs.txt";
 //! # std::fs::remove_file(file_name);
@@ -69,7 +68,7 @@
 //! let mut user_input = String::new();
 //! io::stdin().read_line(&mut user_input)?;
 //!
-//! mem::drop(guard);
+//! drop(guard);
 //!
 //! assert_eq!("Inputs to stdin", user_input);
 //! // Stdin is working as usual again, because the guard is dropped.
@@ -101,7 +100,6 @@ mod test {
     use std::{
         fs::{read_to_string, File},
         io::{stdin, stdout, Read, Result, Write},
-        mem,
     };
     use tempfile;
 
@@ -117,7 +115,7 @@ mod test {
         let guard = StdoutOverride::override_file(&file_path)?;
         print!("{}", data);
         stdout().flush()?;
-        mem::drop(guard);
+        drop(guard);
 
         let contents = read_to_string(file_path)?;
         assert_eq!(data, contents);
@@ -134,7 +132,7 @@ mod test {
         let guard = StderrOverride::override_file(&file_path)?;
         eprint!("{}", data);
         stdout().flush()?;
-        mem::drop(guard);
+        drop(guard);
 
         let contents = read_to_string(file_path)?;
         assert_eq!(data, contents);
@@ -159,7 +157,7 @@ mod test {
         stdout().flush()?;
         stdin().read_line(&mut s)?;
 
-        mem::drop(guard);
+        drop(guard);
 
         assert_eq!(data, s);
 

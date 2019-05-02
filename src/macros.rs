@@ -38,7 +38,7 @@ macro_rules! fd_guard {
                 ///
                 /// [`File::create`]: https://doc.rust-lang.org/stable/std/fs/struct.File.html#method.create
                 pub fn override_file<P: AsRef<Path>>(p: P) -> io::Result<$guard_name> {
-                    Self::check_override();
+                    Self::check_and_override();
 
                     let file = OpenOptions::new().read(true).write(true).append(true).create(true).open(p)?;
                     let file_fd = file.into_raw_fd();
@@ -50,7 +50,7 @@ macro_rules! fd_guard {
                 ///
                 /// [`AsRawFd`]: https://doc.rust-lang.org/stable/std/os/unix/io/trait.AsRawFd.html
                 pub fn override_raw<FD: AsRawFd>(fd: FD) -> io::Result<$guard_name> {
-                    Self::check_override();
+                    Self::check_and_override();
 
                     let file_fd = fd.as_raw_fd();
                     Self::override_fd(file_fd)
@@ -65,9 +65,10 @@ macro_rules! fd_guard {
                     Ok($guard_name { original_fd, file_fd })
                 }
 
-                fn check_override() {
-                    if IS_REPLACED.load(ORDERING) {
-                        panic!("Tried to override Stdout twice");
+                fn check_and_override() {
+                    match IS_REPLACED.compare_exchange(false, true, ORDERING, ORDERING) {
+                        Ok(_) => (),
+                        Err(_e) => panic!("Tried to override Stdout twice"),
                     }
                 }
             }

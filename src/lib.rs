@@ -7,13 +7,14 @@
 //! It provides a Guard for the replacement so that when the guard is dropped the file descriptors are switched back
 //! and the replacement File Descriptor will be closed.
 //!
-//! ** Trying to replace an std File Descriptor twice will result in a panic ** <br>
+//! **Trying to replace an std File Descriptor twice without dropping the guard will result in a panic** <br>
 //!
-//! *Notice:* When trying to use this in tests you **must** run with `cargo test -- --nocapture` otherwise it will redirect stdout/stderr again.
+//! **Notice:** When trying to use this in tests you **must** run with `cargo test -- --nocapture` otherwise it will redirect stdout/stderr again.
 //!
 //! This library is made to be intuitive and easy to use.
 //!
 //! ## Examples
+//! Stdout:
 //! ```rust
 //!# fn main() -> std::io:: Result<()> {
 //! use stdio_override::StdoutOverride;
@@ -27,6 +28,51 @@
 //! assert_eq!("Isan to Stdout!\n", contents);
 //! mem::drop(guard);
 //! println!("Outside!");
+//!
+//!# Ok(())
+//!# }
+//! ```
+//!
+//! Stderr:
+//! ```rust
+//! # fn main() -> std::io:: Result<()> {
+//! use stdio_override::StderrOverride;
+//! use std::{fs, mem};
+//! let file_name = "./testerr.txt";
+//! # std::fs::remove_file(file_name);
+//! let guard = StderrOverride::override_file(file_name)?;
+//! eprintln!("Failure to stderr");
+//!
+//! let contents = fs::read_to_string(file_name)?;
+//! assert_eq!("Failure to stderr\n", contents);
+//! mem::drop(guard);
+//! eprintln!("Stderr is back!");
+//!
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! Stdin:
+//! ```rust
+//! # fn main() -> std::io:: Result<()> {
+//! # use std::{fs::{self, File},io::{self, Write}};
+//! use std::mem;
+//! use stdio_override::StdinOverride;
+//! let file_name = "./inputs.txt";
+//! # std::fs::remove_file(file_name);
+//!
+//! {
+//!     let mut file = File::create(&file_name)?;
+//!     file.write_all(b"Inputs to stdin")?;
+//! }
+//! let guard = StdinOverride::override_file(file_name)?;
+//! let mut user_input = String::new();
+//! io::stdin().read_line(&mut user_input)?;
+//!
+//! mem::drop(guard);
+//!
+//! assert_eq!("Inputs to stdin", user_input);
+//! // Stdin is working as usual again, because the guard is dropped.
 //!
 //!# Ok(())
 //!# }
@@ -92,7 +138,7 @@ mod test {
 
         let contents = read_to_string(file_path)?;
         assert_eq!(data, contents);
-        println!("Outside!");
+        eprintln!("Outside!");
 
         Ok(())
     }
@@ -115,8 +161,7 @@ mod test {
 
         mem::drop(guard);
 
-        let contents = read_to_string(file_path)?;
-        assert_eq!(data, contents);
+        assert_eq!(data, s);
 
         println!("You typed: {}", s);
 

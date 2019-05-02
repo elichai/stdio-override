@@ -11,4 +11,4 @@ Cargo.lock
 =======
 
 .idea
-test.txt
+*.txt

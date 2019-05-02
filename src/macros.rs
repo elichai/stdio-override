@@ -17,13 +17,19 @@ macro_rules! fd_guard {
             /// A Guard over the File Descriptor change.
             /// when this guard is dropped $doc will go back to the original,
             /// and the file will be closed.
+            ///
+            /// For more information please see the [module-level documentation]
+            ///
+            /// [module-level documentation]: index.html
             pub struct $guard_name {
                 original_fd: RawFd,
                 file_fd: RawFd,
             }
 
             /// Override the File Descriptor safely.
+            /// For more information please see the [module-level documentation]
             ///
+            /// [module-level documentation]: index.html
             pub struct $name;
 
             impl $name {

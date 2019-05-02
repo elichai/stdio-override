@@ -15,6 +15,9 @@ keywords = ["unix", "sockets", "fd", "file", "io"]
 libc = "0.2"
 doc-comment = { version = "0.3", optional = true }
 
+[dev-dependencies]
+tempfile = "3.0.7"
+
 [features]
 test-readme =  ["doc-comment"]
 

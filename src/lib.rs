@@ -1,5 +1,6 @@
 #![deny(missing_docs)]
 #![cfg_attr(test, deny(warnings))]
+#![allow(clippy::match_wild_err_arm)]
 
 //! # Stdio-Override
 //!

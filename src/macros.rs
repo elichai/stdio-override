@@ -83,7 +83,6 @@ macro_rules! fd_guard {
                     IS_REPLACED.store(false, ORDERING);
                 }
             }
-
         }
     };
 }

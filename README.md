@@ -31,19 +31,20 @@ use stdio_override::*;
 Here's an example on how to write stdout into a file:
 
 ```rust
-use std::{fs::read_to_string, io};
+use std::{fs::{read_to_string, remove_file}, io};
 use stdio_override::StdoutOverride;
 
 fn main() -> io::Result<()> {
     let file_name = "./readme_test.txt";
 
     let guard = StdoutOverride::override_file(file_name)?;
-    println!("12345");
+    println!("some output");
     drop(guard);
 
     let contents = read_to_string(file_name)?;
-    assert_eq!("12345\n", contents);
+    assert_eq!("some output\n", contents);
     println!("Outside!");
+    remove_file(file_name)?;
     Ok(())
 }
 ```
@@ -79,7 +80,7 @@ fn main() {
 Both will work the same for `Stderr` and if you want to input `Stdin` from a file/socket you can do the following:
 
 ```rust
-use std::{fs::{File, read_to_string}, io::{self, Write}};
+use std::{fs::File, io::{self, Write}};
 use stdio_override::StdinOverride;
 
 fn main() -> io::Result<()> {

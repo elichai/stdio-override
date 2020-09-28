@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/stdio-override/badge.svg)](https://docs.rs/stdio-override)
 ![License](https://img.shields.io/crates/l/stdio-override.svg)
 
-A Rust library to easily override Stdio file descriptors in Rust
+A Rust library to easily override Stdio streams in Rust. It works on Unix and Windows platforms.
 
 * [Documentation](https://docs.rs/stdio-override)
 

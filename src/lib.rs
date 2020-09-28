@@ -3,9 +3,9 @@
 
 //! # Stdio-Override
 //!
-//! This crate provides a library for overriding Stdio file descriptors. <br>
-//! It provides a guard for the replacement so that when the guard is dropped the file descriptors are switched back
-//! and the replacement File Descriptor will be closed.
+//! This crate provides a library for overriding Stdio streams. <br>
+//! It provides a guard for the replacement so that when the guard is dropped the streams are switched back
+//! and the replacement stream will be closed.
 //!
 //! You can replace a standard stream twice, just keep in mind that each guard, when dropped, will
 //! replace stdout with the stdout that existed when it was created. This means that if you don't
@@ -85,10 +85,11 @@ use std::io::{self, IoSlice, IoSliceMut, Read, Write};
 use std::mem::ManuallyDrop;
 use std::path::Path;
 
-#[cfg(not(any(unix)))]
-compile_error!("stdio-override only supports Unix");
+#[cfg(not(any(unix, windows)))]
+compile_error!("stdio-override only supports Unix and Windows");
 
 #[cfg_attr(unix, path = "unix.rs")]
+#[cfg_attr(windows, path = "windows.rs")]
 mod imp;
 
 /// An overridden standard input.
@@ -101,17 +102,16 @@ pub struct StdinOverride {
     reset: bool,
 }
 impl StdinOverride {
-    /// Read standard input from the raw file descriptor. The file descriptor must be readable.
+    /// Read standard input from the raw file descriptor or handle. It must be readable.
     ///
-    /// The file descriptor is not owned, so it is your job to close it later. Closing it while
-    /// this exists will not close the standard error.
+    /// The stream is not owned, so it is your job to close it later. Closing it while this exists
+    /// will not close the standard error.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stdin(raw, false)?), reset: false })
     }
-    /// Read standard input from the owned raw file descriptor. The file descriptor must be
-    /// readable.
+    /// Read standard input from the owned raw file descriptor or handle. It must be readable.
     ///
-    /// The file descriptor is owned, and so you must not use it after passing it to this function.
+    /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stdin(raw, true)?), reset: false })
     }
@@ -177,17 +177,16 @@ pub struct StdoutOverride {
     reset: bool,
 }
 impl StdoutOverride {
-    /// Redirect standard output to the raw file descriptor. The file descriptor must be writable.
+    /// Redirect standard output to the raw file descriptor or handle. It must be writable.
     ///
-    /// The file descriptor is not owned, so it is your job to close it later. Closing it while
-    /// this exists will not close the standard output.
+    /// The stream is not owned, so it is your job to close it later. Closing it while this exists
+    /// will not close the standard output.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stdout(raw, false)?), reset: false })
     }
-    /// Redirect standard output to the owned raw file descriptor. The file descriptor must be
-    /// writable.
+    /// Redirect standard output to the owned raw file descriptor or handle. It must be writable.
     ///
-    /// The file descriptor is owned, and so you must not use it after passing it to this function.
+    /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stdout(raw, true)?), reset: false })
     }
@@ -259,17 +258,16 @@ pub struct StderrOverride {
     reset: bool,
 }
 impl StderrOverride {
-    /// Redirect standard error to the raw file descriptor. The file descriptor must be writable.
+    /// Redirect standard error to the raw file descriptor or handle. It must be writable.
     ///
-    /// The file descriptor is not owned, so it is your job to close it later. Closing it while
-    /// this exists will not close the standard error.
+    /// The stream is not owned, so it is your job to close it later. Closing it while this exists
+    /// will not close the standard error.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stderr(raw, false)?), reset: false })
     }
-    /// Redirect standard error to the owned raw file descriptor. The file descriptor must be
-    /// writable.
+    /// Redirect standard error to the owned raw file descriptor or handle. It must be writable.
     ///
-    /// The file descriptor is owned, and so you must not use it after passing it to this function.
+    /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
         Ok(Self { original: ManuallyDrop::new(imp::override_stderr(raw, true)?), reset: false })
     }

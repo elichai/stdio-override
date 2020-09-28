@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
+use libc::c_int;
 use libc::{STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
 
 pub(crate) use std::os::unix::io::{AsRawFd as AsRaw, IntoRawFd as IntoRaw, RawFd as Raw};
@@ -72,8 +73,8 @@ fn test_original() -> io::Result<()> {
     Ok(())
 }
 
-fn io_res<T: PartialEq + From<i8>>(res: T) -> io::Result<T> {
-    if res == T::from(-1) {
+fn io_res(res: c_int) -> io::Result<c_int> {
+    if res == -1 {
         Err(io::Error::last_os_error())
     } else {
         Ok(res)

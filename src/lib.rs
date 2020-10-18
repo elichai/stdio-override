@@ -322,7 +322,7 @@ impl StderrOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDERR_COUNT.swap(self.index, Ordering::SeqCst) != self.index.saturating_add(1) {
+        if OVERRIDDEN_STDERR_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
             panic!("Stderr override reset out of order!");
         }
         imp::reset_stderr(imp::as_raw(&*self.original))

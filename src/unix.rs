@@ -25,13 +25,13 @@ pub(crate) fn override_stderr(io: RawFd, owned: bool) -> io::Result<File> {
 }
 
 pub(crate) fn reset_stdin(old: RawFd) -> io::Result<()> {
-    set_stdio(0, old)
+    set_stdio(STDIN_FILENO, old)
 }
 pub(crate) fn reset_stdout(old: RawFd) -> io::Result<()> {
-    set_stdio(1, old)
+    set_stdio(STDOUT_FILENO, old)
 }
 pub(crate) fn reset_stderr(old: RawFd) -> io::Result<()> {
-    set_stdio(2, old)
+    set_stdio(STDERR_FILENO, old)
 }
 
 fn override_stdio(stdio: RawFd, other: RawFd, owned: bool) -> io::Result<File> {

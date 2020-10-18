@@ -7,9 +7,8 @@
 //! It provides a guard for the replacement so that when the guard is dropped the streams are switched back
 //! and the replacement stream will be closed.
 //!
-//! You can replace a standard stream twice, just keep in mind that each guard, when dropped, will
-//! replace stdout with the stdout that existed when it was created. This means that if you don't
-//! drop the guards in reverse order of their creation you won't end up back where you started.
+//! You can create multiple stdio overrides, but if you attempt to drop them out of order then they
+//! will panic.
 //!
 //! You can use the [`os_pipe`](https://docs.rs/os_pipe) crate to capture the standard streams in
 //! memory.
@@ -84,6 +83,7 @@ use std::fs::File;
 use std::io::{self, IoSlice, IoSliceMut, Read, Write};
 use std::mem::ManuallyDrop;
 use std::path::Path;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(not(any(unix, windows)))]
 compile_error!("stdio-override only supports Unix and Windows");
@@ -92,6 +92,8 @@ compile_error!("stdio-override only supports Unix and Windows");
 #[cfg_attr(windows, path = "windows.rs")]
 mod imp;
 
+static OVERRIDDEN_STDIN_COUNT: AtomicUsize = AtomicUsize::new(0);
+
 /// An overridden standard input.
 ///
 /// Reading from this reads the original standard input. When it is dropped the standard input
@@ -99,21 +101,27 @@ mod imp;
 #[derive(Debug)]
 pub struct StdinOverride {
     original: ManuallyDrop<File>,
-    reset: bool,
+    index: usize,
 }
 impl StdinOverride {
+    fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
+        Ok(Self {
+            original: ManuallyDrop::new(imp::override_stdin(raw, owned)?),
+            index: OVERRIDDEN_STDIN_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+        })
+    }
     /// Read standard input from the raw file descriptor or handle. It must be readable.
     ///
     /// The stream is not owned, so it is your job to close it later. Closing it while this exists
     /// will not close the standard error.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stdin(raw, false)?), reset: false })
+        Self::from_raw_inner(raw, false)
     }
     /// Read standard input from the owned raw file descriptor or handle. It must be readable.
     ///
     /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stdin(raw, true)?), reset: false })
+        Self::from_raw_inner(raw, true)
     }
     /// Read standard input from the IO device. The device must be readable.
     ///
@@ -134,12 +142,15 @@ impl StdinOverride {
     /// Reset the standard input to its state before this type was constructed.
     ///
     /// This can be called to manually handle errors produced by the destructor.
-    pub fn reset(mut self) -> io::Result<()> {
+    pub fn reset(self) -> io::Result<()> {
         self.reset_inner()?;
-        self.reset = true;
+        std::mem::forget(self);
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
+        if OVERRIDDEN_STDIN_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+            panic!("Stdin override reset out of order!");
+        }
         imp::reset_stdin(imp::as_raw(&*self.original))
     }
 }
@@ -161,11 +172,11 @@ impl<'a> Read for &'a StdinOverride {
 }
 impl Drop for StdinOverride {
     fn drop(&mut self) {
-        if !self.reset {
-            let _ = self.reset_inner();
-        }
+        let _ = self.reset_inner();
     }
 }
+
+static OVERRIDDEN_STDOUT_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// An overridden standard output.
 ///
@@ -174,21 +185,27 @@ impl Drop for StdinOverride {
 #[derive(Debug)]
 pub struct StdoutOverride {
     original: ManuallyDrop<File>,
-    reset: bool,
+    index: usize,
 }
 impl StdoutOverride {
+    fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
+        Ok(Self {
+            original: ManuallyDrop::new(imp::override_stdout(raw, owned)?),
+            index: OVERRIDDEN_STDOUT_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+        })
+    }
     /// Redirect standard output to the raw file descriptor or handle. It must be writable.
     ///
     /// The stream is not owned, so it is your job to close it later. Closing it while this exists
     /// will not close the standard output.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stdout(raw, false)?), reset: false })
+        Self::from_raw_inner(raw, false)
     }
     /// Redirect standard output to the owned raw file descriptor or handle. It must be writable.
     ///
     /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stdout(raw, true)?), reset: false })
+        Self::from_raw_inner(raw, true)
     }
     /// Redirect standard output to the IO device. The device must be writable.
     ///
@@ -209,12 +226,15 @@ impl StdoutOverride {
     /// Reset the standard output to its state before this type was constructed.
     ///
     /// This can be called to manually handle errors produced by the destructor.
-    pub fn reset(mut self) -> io::Result<()> {
+    pub fn reset(self) -> io::Result<()> {
         self.reset_inner()?;
-        self.reset = true;
+        std::mem::forget(self);
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
+        if OVERRIDDEN_STDOUT_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+            panic!("Stdout override reset out of order!");
+        }
         imp::reset_stdout(imp::as_raw(&*self.original))
     }
 }
@@ -242,11 +262,11 @@ impl<'a> Write for &'a StdoutOverride {
 }
 impl Drop for StdoutOverride {
     fn drop(&mut self) {
-        if !self.reset {
-            let _ = self.reset_inner();
-        }
+        let _ = self.reset_inner();
     }
 }
+
+static OVERRIDDEN_STDERR_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// An overridden standard error.
 ///
@@ -255,21 +275,27 @@ impl Drop for StdoutOverride {
 #[derive(Debug)]
 pub struct StderrOverride {
     original: ManuallyDrop<File>,
-    reset: bool,
+    index: usize,
 }
 impl StderrOverride {
+    fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
+        Ok(Self {
+            original: ManuallyDrop::new(imp::override_stderr(raw, owned)?),
+            index: OVERRIDDEN_STDERR_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+        })
+    }
     /// Redirect standard error to the raw file descriptor or handle. It must be writable.
     ///
     /// The stream is not owned, so it is your job to close it later. Closing it while this exists
     /// will not close the standard error.
     pub fn from_raw(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stderr(raw, false)?), reset: false })
+        Self::from_raw_inner(raw, false)
     }
     /// Redirect standard error to the owned raw file descriptor or handle. It must be writable.
     ///
     /// The stream is owned, and so you must not use it after passing it to this function.
     pub fn from_raw_owned(raw: imp::Raw) -> io::Result<Self> {
-        Ok(Self { original: ManuallyDrop::new(imp::override_stderr(raw, true)?), reset: false })
+        Self::from_raw_inner(raw, true)
     }
     /// Redirect standard error to the IO device. The device must be writable.
     ///
@@ -290,12 +316,15 @@ impl StderrOverride {
     /// Reset the standard error to its state before this type was constructed.
     ///
     /// This can be called to manually handle errors produced by the destructor.
-    pub fn reset(mut self) -> io::Result<()> {
+    pub fn reset(self) -> io::Result<()> {
         self.reset_inner()?;
-        self.reset = true;
+        std::mem::forget(self);
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
+        if OVERRIDDEN_STDERR_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+            panic!("Stderr override reset out of order!");
+        }
         imp::reset_stderr(imp::as_raw(&*self.original))
     }
 }
@@ -323,9 +352,7 @@ impl<'a> Write for &'a StderrOverride {
 }
 impl Drop for StderrOverride {
     fn drop(&mut self) {
-        if !self.reset {
-            let _ = self.reset_inner();
-        }
+        let _ = self.reset_inner();
     }
 }
 

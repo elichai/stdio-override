@@ -107,7 +107,7 @@ impl StdinOverride {
     fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
         Ok(Self {
             original: ManuallyDrop::new(imp::override_stdin(raw, owned)?),
-            index: OVERRIDDEN_STDIN_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+            index: OVERRIDDEN_STDIN_COUNT.fetch_add(1, Ordering::SeqCst),
         })
     }
     /// Read standard input from the raw file descriptor or handle. It must be readable.
@@ -148,7 +148,7 @@ impl StdinOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDIN_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+        if OVERRIDDEN_STDIN_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
             panic!("Stdin override reset out of order!");
         }
         imp::reset_stdin(imp::as_raw(&*self.original))
@@ -191,7 +191,7 @@ impl StdoutOverride {
     fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
         Ok(Self {
             original: ManuallyDrop::new(imp::override_stdout(raw, owned)?),
-            index: OVERRIDDEN_STDOUT_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+            index: OVERRIDDEN_STDOUT_COUNT.fetch_add(1, Ordering::SeqCst),
         })
     }
     /// Redirect standard output to the raw file descriptor or handle. It must be writable.
@@ -232,7 +232,7 @@ impl StdoutOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDOUT_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+        if OVERRIDDEN_STDOUT_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
             panic!("Stdout override reset out of order!");
         }
         imp::reset_stdout(imp::as_raw(&*self.original))
@@ -281,7 +281,7 @@ impl StderrOverride {
     fn from_raw_inner(raw: imp::Raw, owned: bool) -> io::Result<Self> {
         Ok(Self {
             original: ManuallyDrop::new(imp::override_stderr(raw, owned)?),
-            index: OVERRIDDEN_STDERR_COUNT.fetch_add(1, Ordering::SeqCst).wrapping_add(1),
+            index: OVERRIDDEN_STDERR_COUNT.fetch_add(1, Ordering::SeqCst),
         })
     }
     /// Redirect standard error to the raw file descriptor or handle. It must be writable.
@@ -322,7 +322,7 @@ impl StderrOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDERR_COUNT.fetch_sub(1, Ordering::SeqCst) != self.index {
+        if OVERRIDDEN_STDERR_COUNT.swap(self.index, Ordering::SeqCst) != self.index.saturating_add(1) {
             panic!("Stderr override reset out of order!");
         }
         imp::reset_stderr(imp::as_raw(&*self.original))

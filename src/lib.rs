@@ -148,7 +148,7 @@ impl StdinOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDIN_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
+        if OVERRIDDEN_STDIN_COUNT.swap(self.index, Ordering::SeqCst) <= self.index {
             panic!("Stdin override reset out of order!");
         }
         imp::reset_stdin(imp::as_raw(&*self.original))
@@ -232,7 +232,7 @@ impl StdoutOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDOUT_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
+        if OVERRIDDEN_STDOUT_COUNT.swap(self.index, Ordering::SeqCst) <= self.index {
             panic!("Stdout override reset out of order!");
         }
         imp::reset_stdout(imp::as_raw(&*self.original))
@@ -322,7 +322,7 @@ impl StderrOverride {
         Ok(())
     }
     fn reset_inner(&self) -> io::Result<()> {
-        if OVERRIDDEN_STDERR_COUNT.swap(self.index, Ordering::SeqCst) != self.index.wrapping_add(1) {
+        if OVERRIDDEN_STDERR_COUNT.swap(self.index, Ordering::SeqCst) <= self.index {
             panic!("Stderr override reset out of order!");
         }
         imp::reset_stderr(imp::as_raw(&*self.original))
@@ -429,6 +429,53 @@ mod test {
         assert_eq!(data, s);
 
         println!("You typed: {}", s);
+
+        Ok(())
+    }
+
+    fn null() -> Result<File> {
+        File::create(if cfg!(windows) {
+            "nul"
+        } else if cfg!(target_os = "redox") {
+            "null:"
+        } else {
+            "/dev/null"
+        })
+    }
+
+    #[test]
+    fn test_multiple() -> Result<()> {
+        let null = null()?;
+
+        let guard_1 = StdoutOverride::from_io_ref(&null)?;
+        let guard_2 = StdoutOverride::from_io_ref(&null)?;
+
+        std::mem::forget(guard_2);
+        drop(guard_1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_panic() -> Result<()> {
+        let null = null()?;
+
+        let guard_0 = StdoutOverride::from_io_ref(&null)?;
+        let guard_1 = StdoutOverride::from_io_ref(&null)?;
+        let guard_2 = StdoutOverride::from_io_ref(&null)?;
+        drop(guard_1);
+
+        let old_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|info| {
+            let payload: &'static str = info.payload().downcast_ref::<&'static str>().unwrap();
+            assert_eq!(payload, "Stdout override reset out of order!");
+        }));
+
+        assert!(std::panic::catch_unwind(|| drop(guard_2)).is_err());
+
+        std::panic::set_hook(old_hook);
+
+        drop(guard_0);
 
         Ok(())
     }

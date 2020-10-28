@@ -1,8 +1,7 @@
 use std::fs::File;
 use std::io;
-use std::os::windows::io::FromRawHandle;
+use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
 use std::ptr;
-use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
 
 use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
 use winapi::um::handleapi::{CloseHandle, DuplicateHandle, GetHandleInformation, INVALID_HANDLE_VALUE};

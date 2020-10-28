@@ -100,3 +100,19 @@ fn handle_res(res: RawHandle) -> io::Result<RawHandle> {
         Ok(res)
     }
 }
+
+impl AsRawHandle for crate::StdinOverride {
+    fn as_raw_handle(&self) -> RawHandle {
+        self.original.as_raw_handle()
+    }
+}
+impl AsRawHandle for crate::StdoutOverride {
+    fn as_raw_handle(&self) -> RawHandle {
+        self.original.as_raw_handle()
+    }
+}
+impl AsRawHandle for crate::StderrOverride {
+    fn as_raw_handle(&self) -> RawHandle {
+        self.original.as_raw_handle()
+    }
+}

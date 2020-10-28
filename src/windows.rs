@@ -1,7 +1,8 @@
 use std::fs::File;
 use std::io;
-use std::os::windows::FromRawHandle;
+use std::os::windows::io::FromRawHandle;
 use std::ptr;
+use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
 
 use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
 use winapi::um::handleapi::{CloseHandle, DuplicateHandle, GetHandleInformation, INVALID_HANDLE_VALUE};
@@ -21,13 +22,13 @@ pub(crate) fn into_raw(io: impl IntoRawHandle) -> RawHandle {
 }
 
 pub(crate) fn override_stdin(io: RawHandle, owned: bool) -> io::Result<File> {
-    override_stdio(STD_INPUT_HANDLE, owned)
+    override_stdio(STD_INPUT_HANDLE, io, owned)
 }
 pub(crate) fn override_stdout(io: RawHandle, owned: bool) -> io::Result<File> {
-    override_stdio(STD_OUTPUT_HANDLE, owned)
+    override_stdio(STD_OUTPUT_HANDLE, io, owned)
 }
 pub(crate) fn override_stderr(io: RawHandle, owned: bool) -> io::Result<File> {
-    override_stdio(STD_ERROR_HANDLE, owned)
+    override_stdio(STD_ERROR_HANDLE, io, owned)
 }
 
 pub(crate) fn reset_stdin(old: RawHandle) -> io::Result<()> {

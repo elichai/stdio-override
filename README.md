@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/stdio-override/badge.svg)](https://docs.rs/stdio-override)
 ![License](https://img.shields.io/crates/l/stdio-override.svg)
 
-A Rust library to easily override Stdio file descriptors in Rust
+A Rust library to easily override Stdio streams in Rust. It works on Unix and Windows platforms.
 
 * [Documentation](https://docs.rs/stdio-override)
 
@@ -15,7 +15,6 @@ Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
 stdio-override = "0.1"
-
 ```
 
 and for Rust Edition 2015 add this to your crate root:
@@ -37,7 +36,7 @@ use stdio_override::StdoutOverride;
 fn main() -> io::Result<()> {
     let file_name = "./readme_test.txt";
 
-    let guard = StdoutOverride::override_file(file_name)?;
+    let guard = StdoutOverride::from_file(file_name)?;
     println!("some output");
     drop(guard);
 
@@ -63,7 +62,7 @@ fn main() {
     let listener = TcpListener::bind(address).unwrap();
     let socket = TcpStream::connect(address).unwrap();
 
-    let guard = StdoutOverride::override_raw(socket).unwrap();
+    let guard = StdoutOverride::from_io(socket).unwrap();
     println!("12345");
     drop(guard);
 
@@ -91,7 +90,7 @@ fn main() -> io::Result<()> {
         file.write_all(b"Data")?;
     }
 
-    let guard = StdinOverride::override_file(file_name)?;
+    let guard = StdinOverride::from_file(file_name)?;
     
     let mut inputs = String::new();
     io::stdin().read_line(&mut inputs)?;

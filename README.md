@@ -1,5 +1,5 @@
 # stdio-override
-[![Build Status](https://travis-ci.org/elichai/stdio-override.svg?branch=master)](https://travis-ci.org/elichai/stdio-override)
+[![Build Status](https://github.com/elichai/docs/stdio-override/workflows/ci.yml/badge.svg)](https://github.com/elichai/stdio-override/actions)
 [![Latest version](https://img.shields.io/crates/v/stdio-override.svg)](https://crates.io/crates/stdio-override)
 [![Documentation](https://docs.rs/stdio-override/badge.svg)](https://docs.rs/stdio-override)
 ![License](https://img.shields.io/crates/l/stdio-override.svg)

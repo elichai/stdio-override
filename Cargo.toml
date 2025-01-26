@@ -10,7 +10,6 @@ description = "Rust library for overriding Stdin/Stdout/Stderr with a different 
 categories = ["os", "development-tools::debugging"]
 keywords = ["crossplatform", "sockets", "fd", "file", "io"]
 
-
 [dependencies]
 doc-comment = { version = "0.3", optional = true }
 
@@ -20,8 +19,7 @@ libc = "0.2"
 winapi = { version = "0.3", features = ["processenv", "winbase", "std"] }
 
 [dev-dependencies]
-os_pipe = "0.9.2"
+os_pipe = "1"
 
 [features]
-test-readme =  ["doc-comment"]
-
+test-readme = ["doc-comment"]

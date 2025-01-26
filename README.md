@@ -1,4 +1,5 @@
 # stdio-override
+
 [![Build Status](https://github.com/elichai/docs/stdio-override/workflows/ci.yml/badge.svg)](https://github.com/elichai/stdio-override/actions)
 [![Latest version](https://img.shields.io/crates/v/stdio-override.svg)](https://crates.io/crates/stdio-override)
 [![Documentation](https://docs.rs/stdio-override/badge.svg)](https://docs.rs/stdio-override)
@@ -6,7 +7,7 @@
 
 A Rust library to easily override Stdio streams in Rust. It works on Unix and Windows platforms.
 
-* [Documentation](https://docs.rs/stdio-override)
+- [Documentation](https://docs.rs/stdio-override)
 
 ## Usage
 
@@ -22,7 +23,9 @@ and for Rust Edition 2015 add this to your crate root:
 ```rust
 extern crate stdio_override;
 ```
+
 In Rust Edition 2018 you can simply do:
+
 ```rust
 use stdio_override::*;
 ```
@@ -48,14 +51,17 @@ fn main() -> io::Result<()> {
 }
 ```
 
-You can do the same with sockets:
+On Unix(Linux/MacOS etc.) you can also do the same with sockets:
+
 ```rust
+
 use std::{
     io::Read,
     net::{TcpListener, TcpStream},
 };
 use stdio_override::StdoutOverride;
 
+#[cfg(unix)]
 fn main() {
     let address = ("127.0.0.1", 5543);
 
@@ -74,6 +80,8 @@ fn main() {
 
     println!("Outside!");
 }
+#[cfg(not(unix))]
+fn main() {}
 ```
 
 Both will work the same for `Stderr` and if you want to input `Stdin` from a file/socket you can do the following:

@@ -84,17 +84,17 @@ use stdio_override::StdinOverride;
 
 fn main() -> io::Result<()> {
     let file_name = "./test_inputs.txt";
-    
+
     {
         let mut file = File::create(&file_name)?;
         file.write_all(b"Data")?;
     }
 
     let guard = StdinOverride::from_file(file_name)?;
-    
+
     let mut inputs = String::new();
     io::stdin().read_line(&mut inputs)?;
-    
+
     drop(guard);
 
     assert_eq!("Data", inputs);

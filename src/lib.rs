@@ -162,7 +162,7 @@ impl Read for StdinOverride {
         self.original.read_vectored(bufs)
     }
 }
-impl<'a> Read for &'a StdinOverride {
+impl Read for &'_ StdinOverride {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         (&*self.original).read(buf)
     }
@@ -249,7 +249,7 @@ impl Write for StdoutOverride {
         self.original.flush()
     }
 }
-impl<'a> Write for &'a StdoutOverride {
+impl Write for &'_ StdoutOverride {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         (&*self.original).write(buf)
     }
@@ -339,7 +339,7 @@ impl Write for StderrOverride {
         self.original.flush()
     }
 }
-impl<'a> Write for &'a StderrOverride {
+impl Write for &'_ StderrOverride {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         (&*self.original).write(buf)
     }
